@@ -1,0 +1,3 @@
+[skill]
+bmod = "bmod-relearn"
+source = "file:./agents/bmad/skills"

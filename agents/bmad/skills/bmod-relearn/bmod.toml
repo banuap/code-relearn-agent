@@ -1,0 +1,30 @@
+[bmod]
+code = "relearn"
+version = "0.1.0"
+update_source = "file:./agents/bmad/skills"
+skills = ["relearn-analyst", "relearn-extract", "relearn-handoff"]
+recommended_skills = []
+pre_install_message = "ReLearn needs the .NET 8 SDK and the relearn CLI (src/ReLearn.Analyzer) to analyze legacy .NET solutions."
+post_install_message = "Run `bmad setup relearn`, then talk to Rex (relearn-analyst) or run relearn-extract on your legacy .sln."
+
+[[bmod.config_questions]]
+key = "relearn_cli"
+prompt = "Command that runs the relearn CLI (e.g. `dotnet C:/tools/relearn/relearn.dll`)"
+default = "relearn"
+scope = "user"
+
+[[bmod.config_questions]]
+key = "relearn_target"
+prompt = "Default modernization target profile (java-spring, node-electron, or path to a profile JSON)"
+default = "java-spring"
+scope = "team"
+
+[[bmod.config_questions]]
+key = "relearn_pack_dir"
+prompt = "Where to keep the knowledge pack"
+default = ".relearn"
+scope = "team"
+
+[[bmod.knowledge]]
+path = "docs"
+skills = ["relearn-analyst", "relearn-handoff"]
