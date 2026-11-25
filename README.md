@@ -212,3 +212,6 @@ scripts/                   install.ps1 / install.sh
 - For .NET Framework solutions, restore the solution and install the Visual Studio Build Tools or targeting packs so MSBuild can evaluate the projects. Otherwise ReLearn falls back to `--adhoc` mode, which gives partial semantics.
 - Secrets are redacted. Treat the pack as internal documentation of your system.
 - See `docs/KNOWLEDGE-PACK.md` for the limits of static extraction. The agent's validation and enrichment steps exist to cover them.
+
+## License
+Licensed under the [Apache License, Version 2.0](LICENSE). See [NOTICE](NOTICE) for attribution.

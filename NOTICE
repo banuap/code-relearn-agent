@@ -1,0 +1,8 @@
+ReLearn (code-relearn-agent)
+Copyright 2026 Banu Parasuraman
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product uses third-party components, each under its own license:
+- Roslyn (Microsoft.CodeAnalysis.*) - MIT License
+- Microsoft.Build.Locator - MIT License

@@ -19,6 +19,10 @@
     <ToolCommandName>relearn</ToolCommandName>
     <PackageId>ReLearn.Analyzer</PackageId>
     <Description>Roslyn-based legacy .NET knowledge extractor for modernization agents (Spec Kit / BMAD).</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/banuap/code-relearn-agent</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/banuap/code-relearn-agent</RepositoryUrl>
+    <Copyright>Copyright 2026 Banu Parasuraman</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
