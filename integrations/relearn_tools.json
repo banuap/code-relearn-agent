@@ -1,0 +1,253 @@
+[
+  {
+    "name": "relearn_analyze",
+    "description": "Run Roslyn static analysis on a legacy .NET solution (.sln/.csproj/folder) and write the knowledge pack (call graph, dependency map, AST, business rules, flows, journeys, DB objects, integrations). Returns summary.md.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "solution": {
+          "type": "string",
+          "description": "Path to .sln, .slnx, .csproj, .vbproj or folder"
+        },
+        "include_tests": {
+          "type": "boolean",
+          "description": "Also analyze test projects (good rule evidence)"
+        },
+        "ast": {
+          "type": "string",
+          "enum": [
+            "none",
+            "outline",
+            "full"
+          ],
+          "description": "AST detail level"
+        },
+        "adhoc": {
+          "type": "boolean",
+          "description": "Skip MSBuild and parse sources only (lower fidelity)"
+        }
+      },
+      "required": [
+        "solution"
+      ]
+    }
+  },
+  {
+    "name": "get_summary",
+    "description": "Return summary.md of the existing knowledge pack.",
+    "parameters": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "list_capabilities",
+    "description": "List capabilities (modernization units) with id, slug, priority, flow/rule counts and entities.",
+    "parameters": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "read_capability",
+    "description": "Load one capability bundle (entry points, flows, rules, entities, DB objects, data operations, integrations, journeys, screens). Load one at a time.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "slug_or_id": {
+          "type": "string",
+          "description": "Capability slug or CAP-xxx id"
+        }
+      },
+      "required": [
+        "slug_or_id"
+      ]
+    }
+  },
+  {
+    "name": "query_rules",
+    "description": "Filter business rules by kind, capability, minimum confidence and free text.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "",
+            "validation",
+            "guard",
+            "existence",
+            "authorization",
+            "decision",
+            "decision-table",
+            "state-transition",
+            "calculation",
+            "declarative-validation",
+            "fluent-validation",
+            "parameter",
+            "data-constraint"
+          ]
+        },
+        "capability": {
+          "type": "string"
+        },
+        "min_confidence": {
+          "type": "string",
+          "enum": [
+            "",
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer"
+        }
+      }
+    }
+  },
+  {
+    "name": "get_flow",
+    "description": "Return one business flow (FLOW-xxxx) with ordered steps, data, integrations and rules.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "flow_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "flow_id"
+      ]
+    }
+  },
+  {
+    "name": "read_pack_file",
+    "description": "Read a top-level knowledge-pack JSON file.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "dependencies.json",
+            "callgraph.json",
+            "entrypoints.json",
+            "data.json",
+            "integrations.json",
+            "journeys.json",
+            "manifest.json",
+            "rules.json",
+            "flows.json",
+            "capabilities.json",
+            "enrichment.json"
+          ]
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "read_source",
+    "description": "Read lines of a legacy source file to verify extracted facts. Path relative to the legacy root, as in pack locations.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "start_line": {
+          "type": "integer"
+        },
+        "end_line": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path"
+      ]
+    }
+  },
+  {
+    "name": "save_enrichment",
+    "description": "Merge business-language enrichment into enrichment.json. Keys: capabilities{CAP-id:{name,description,priority}}, flows{FLOW-id:{name,goal,actor}}, rules{BR-id:{statement,title,confidence,questions[],drop,dropReason}}, journeys{UJ-id:{name,actor}}.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "enrichment": {
+          "type": "object",
+          "properties": {
+            "capabilities": {
+              "type": "object"
+            },
+            "flows": {
+              "type": "object"
+            },
+            "rules": {
+              "type": "object"
+            },
+            "journeys": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "required": [
+        "enrichment"
+      ]
+    }
+  },
+  {
+    "name": "relearn_generate",
+    "description": "Generate Spec Kit (kind=speckit) or BMAD (kind=bmad) artifacts from the pack for a target profile.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "speckit",
+            "bmad"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "description": "java-spring | node-electron | path to profile JSON"
+        },
+        "out": {
+          "type": "string",
+          "description": "Output repository folder"
+        },
+        "only": {
+          "type": "string",
+          "description": "Optional comma-separated capability ids/slugs (speckit only)"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "out"
+      ]
+    }
+  },
+  {
+    "name": "verify_outputs",
+    "description": "Check generated outputs: clarification markers per spec, unassigned parity items, missing files.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "out": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "out"
+      ]
+    }
+  }
+]

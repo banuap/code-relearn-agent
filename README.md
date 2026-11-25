@@ -95,6 +95,85 @@ The agent runs `relearn analyze`, checks how reliable the extraction was, rewrit
 - **Try the sample first:** `/relearn <path>\code-relearn-agent\samples\LegacyOrders\LegacyOrders.csproj java-spring .` (run `dotnet restore` on the sample first).
 - **Next step:** once the specs exist, ask Claude Code to `Use the modernizer agent to implement specs/001-...`.
 
+## Using it from LangChain / LangGraph / any function-calling LLM (no MCP needed)
+
+`integrations/` packages the agent as **11 function-calling tools** plus the same system prompt as the Claude Code agent (`agents/claude/agents/dotnet-relearn.md`). The tools are written once in plain Python (`integrations/python/relearn_tools/core.py`), and each runtime gets a thin adapter. MCP is not required.
+
+### The tools
+| tool | purpose |
+|---|---|
+| `relearn_analyze` | run Roslyn extraction on a `.sln`/`.csproj`/folder → knowledge pack, returns `summary.md` |
+| `get_summary`, `list_capabilities` | orient: counts, risks, modernization units |
+| `read_capability` | load one capability bundle (flows, rules, entities, DB objects, integrations, journeys) |
+| `query_rules`, `get_flow`, `read_pack_file` | targeted look-ups in the pack |
+| `read_source` | read legacy source lines to verify a fact (restricted to the legacy folder) |
+| `save_enrichment` | write business-language rules, flows and capabilities into `enrichment.json` |
+| `relearn_generate` | emit Spec Kit (`speckit`) or BMAD (`bmad`) artifacts for a target profile |
+| `verify_outputs` | count open clarifications, unassigned parity items and missing files |
+
+Tool results are capped at `RELEARN_MAX_CHARS` (default 60,000) so a large bundle never overflows the model's context.
+
+### Options
+| option | when to use | entry point | example |
+|---|---|---|---|
+| **1. LangGraph pipeline** (recommended) | real modernization runs, large solutions | `relearn_tools.pipeline.build_pipeline()` | `examples/langgraph_pipeline.py` |
+| **2. LangChain agent** | exploration, Q&A over the legacy system | `relearn_tools.langchain_tools.create_relearn_agent()` | `examples/langchain_agent.py` |
+| **3. OpenAI / Azure OpenAI SDK** | no LangChain dependency | `openai_tools()` + `call_tool()` | `examples/openai_function_calling.py` |
+| **4. Anthropic SDK** | no LangChain dependency | `anthropic_tools()` + `call_tool()` | `examples/anthropic_tool_use.py` |
+| **5. Any other stack** (Spring AI, Semantic Kernel, LangChain4j, Vercel AI SDK…) | non-Python agents | `integrations/relearn_tools.json` (JSON-Schema tool definitions) | implement each tool by running the `relearn` CLI and reading the pack JSON |
+
+The **LangGraph pipeline** runs fixed phases: analyze → plan → enrich every capability in parallel (one LLM call each, typed output `CapabilityEnrichment`) → merge into `enrichment.json` → optional human review → generate Spec Kit + BMAD → verify. It is resumable with a checkpointer and has predictable cost.
+
+The **free agent** options (2–4) let the model choose which tools to call, following the ReLearn prompt.
+
+### Setup
+Build the CLI first (see Quick start), then:
+```powershell
+cd integrations\python
+pip install -r requirements.txt          # LangChain/LangGraph; add `openai` or `anthropic` for options 3–4
+
+$env:RELEARN_CLI    = "dotnet C:\path\to\code-relearn-agent\src\ReLearn.Analyzer\bin\Release\net8.0\relearn.dll"
+$env:RELEARN_PACK   = "C:\src\modernization\.relearn"   # where the knowledge pack is written (default .relearn)
+$env:RELEARN_LEGACY = "C:\src\Legacy"                    # optional: root for read_source (defaults to the solution folder)
+$env:RELEARN_MODEL  = "anthropic:claude-sonnet-4-6"      # LangChain format; raw SDKs use e.g. "gpt-4.1" / "claude-sonnet-4-6"
+$env:ANTHROPIC_API_KEY = "..."                           # or OPENAI_API_KEY / Azure OpenAI settings
+```
+
+### Run
+```powershell
+# 1. LangGraph pipeline (add --review to pause after enrichment and edit .relearn\enrichment.json)
+python examples\langgraph_pipeline.py C:\src\Legacy\Legacy.sln java-spring C:\src\modernization --review
+
+# 2. LangChain agent
+python examples\langchain_agent.py C:\src\Legacy\Legacy.sln java-spring C:\src\modernization
+
+# 3. OpenAI / Azure OpenAI function calling
+python examples\openai_function_calling.py C:\src\Legacy\Legacy.sln java-spring C:\src\modernization
+
+# 4. Anthropic tool use
+python examples\anthropic_tool_use.py C:\src\Legacy\Legacy.sln java-spring C:\src\modernization
+```
+
+### Use in your own code
+```python
+# LangChain
+from relearn_tools.langchain_tools import create_relearn_agent, get_tools
+agent = create_relearn_agent(model="openai:gpt-4.1")      # or add get_tools() to your own agent
+
+# LangGraph
+from relearn_tools.pipeline import build_pipeline
+graph = build_pipeline(model="anthropic:claude-sonnet-4-6")
+graph.invoke({"solution": r"C:\src\Legacy\Legacy.sln", "target": "java-spring", "out": r"C:\src\modernization"})
+
+# Any provider's function calling
+from relearn_tools import openai_tools, anthropic_tools, call_tool, system_prompt
+result = call_tool(tool_call_name, tool_call_arguments)   # returns the string to send back to the model
+```
+
+For Azure OpenAI, replace `OpenAI()` in the example with `AzureOpenAI(azure_endpoint=..., api_key=..., api_version=...)` and set `RELEARN_MODEL` to your deployment name.
+
+More detail: [integrations/README.md](integrations/README.md).
+
 ## Spec Kit integration
 `relearn speckit` writes:
 - `.specify/memory/constitution.md`: modernization principles (parity, traceability, contract compatibility, data fidelity, characterization tests first, strangler-fig delivery) plus the target stack. If you already have a customized constitution, the file is written as `constitution.relearn.md` instead.

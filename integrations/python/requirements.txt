@@ -1,0 +1,9 @@
+# core tools + raw function calling need no third-party packages.
+# LangChain / LangGraph integration:
+langchain>=1.0
+langgraph>=1.0
+langchain-anthropic      # or langchain-openai, langchain-google-genai, … (whichever model provider you use)
+pydantic>=2
+# Raw SDK examples (optional):
+# openai>=1.40
+# anthropic>=0.40
